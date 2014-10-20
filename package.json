@@ -1,0 +1,14 @@
+{
+  "name": "SalesforceConsoleStatistics",
+  "version": "0.0.1",
+  "description": "CIC Statistics in the service cloud console",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "~4.9.x",
+    "request":"*"
+  },
+  "license": "MPLv2"
+}
