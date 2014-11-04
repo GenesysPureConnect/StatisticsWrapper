@@ -12,15 +12,17 @@ var messageTimer = null
 
 
 function pollMessages(){
-    request(getRequestOptions("GET",'/messaging/messages',null), function(error, response, body){
+    request(connection.getRequestOptions("GET",'/messaging/messages',null), function(error, response, body){
         if(body == null){
             return;
         }
 
-    //    console.log(JSON.stringify(body));
-    console.log(body);
+//        console.log(JSON.stringify(body));
+        //console.log(body);
         for(var i = 0; i< body.length; i++){
             var message = body[i];
+
+            console.log(message['__type']);
 
             if(message['__type'] == 'urn:inin.com:statistics:statisticValueMessage'){
                 for(var s = 0; s< message.statisticValueChanges.length; s++){
@@ -32,9 +34,31 @@ function pollMessages(){
                         stats.addWorkgroupStatToCatalog(stat);
                     }
                 }
+            }else if (message['__type'] == 'urn:inin.com:alerts:alertNotificationMessage'){
+            //    console.log(JSON.stringify(message));
+                for(var a = 0; a< message.alertNotificationList.length; a++){
+                    stats.handleAlertNotification(message.alertNotificationList[a]);
+                }
+
+            }else if (message['__type'] == 'urn:inin.com:alerts:alertCatalogChangedMessage'){
+                //console.log(JSON.stringify(message));
+                stats.alertCatalogUpdated(message);
             }
         }
     });
+}
+
+function startAlertWatches(){
+
+    request(connection.getRequestOptions("PUT", "/messaging/subscriptions/alerts/alert-catalog", {
+        'alertSetCategories': [2]
+    }), function(error,response,body){
+        request(connection.getRequestOptions("PUT", "/messaging/subscriptions/alerts/alert-notifications", {
+
+        }), function(error,response,body){
+
+        }); //end stat values put
+    }); //end stat values put
 }
 
 function startWorkgroupStatWatches(workgroupList){
@@ -42,13 +66,15 @@ function startWorkgroupStatWatches(workgroupList){
 
     for(var x=0; x< workgroupList.length; x++){
         var workgroup = workgroupList[x];
+        console.log('start watch on ' + workgroup)
 
         for(var statKeyIndex = 0; statKeyIndex< stats.workgroupStats.length; statKeyIndex++){
+
             var statWatchParams = {
                 "statisticIdentifier": stats.workgroupStats[statKeyIndex],
                 "parameterValueItems": [{
                     "parameterTypeId": "ININ.People.WorkgroupStats:Workgroup",
-                    "value": workgroup.configurationId.id
+                    "value": workgroup
                 }]
             };
 
@@ -61,7 +87,7 @@ function startWorkgroupStatWatches(workgroupList){
                 "statisticIdentifier": stats.workgroupIntervalStats[statKeyIndex],
                 "parameterValueItems": [{
                     "parameterTypeId": "ININ.People.WorkgroupStats:Workgroup",
-                    "value": workgroup.configurationId.id
+                    "value": workgroup
                 }, {
                     "parameterTypeId": "ININ.Queue:Interval",
                     "value": "CurrentShift"
@@ -79,6 +105,8 @@ function startWorkgroupStatWatches(workgroupList){
 
         //Start polling for messages
         messageTimer = setInterval(pollMessages, 2000);
+
+        startAlertWatches();
     }); //end stat values put
 
 }
