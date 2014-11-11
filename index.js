@@ -1,6 +1,9 @@
 var express = require('express')
 var app = express();
 
+var cors = require('cors')
+app.use(cors())
+
 app.set('port', (process.env.PORT || 8080))
 
 var request = require('request');
@@ -13,6 +16,12 @@ var messageTimer = null
 
 function pollMessages(){
     request(connection.getRequestOptions("GET",'/messaging/messages',null), function(error, response, body){
+
+        if(error != null){
+            console.log("ERROR - Unable to poll messages from CIC");
+            logIntoCICAndStartWatches();
+        }
+
         if(body == null){
             return;
         }
@@ -69,7 +78,6 @@ function startWorkgroupStatWatches(workgroupList){
         console.log('start watch on ' + workgroup)
 
         for(var statKeyIndex = 0; statKeyIndex< stats.workgroupStats.length; statKeyIndex++){
-
             var statWatchParams = {
                 "statisticIdentifier": stats.workgroupStats[statKeyIndex],
                 "parameterValueItems": [{
@@ -82,19 +90,24 @@ function startWorkgroupStatWatches(workgroupList){
 
         }
 
-        for(var statKeyIndex = 0; statKeyIndex< stats.workgroupIntervalStats.length; statKeyIndex++){
-            var statWatchParams = {
-                "statisticIdentifier": stats.workgroupIntervalStats[statKeyIndex],
-                "parameterValueItems": [{
-                    "parameterTypeId": "ININ.People.WorkgroupStats:Workgroup",
-                    "value": workgroup
-                }, {
-                    "parameterTypeId": "ININ.Queue:Interval",
-                    "value": "CurrentShift"
-                }]
-            };
 
-            statWatchData.push(statWatchParams);
+        for(var statKeyIndex = 0; statKeyIndex< stats.workgroupIntervalStats.length; statKeyIndex++){
+            for(var intervalIndex=0; intervalIndex< configuration.intervals.length; intervalIndex++)
+            {
+
+                var statWatchParams = {
+                    "statisticIdentifier": stats.workgroupIntervalStats[statKeyIndex],
+                    "parameterValueItems": [{
+                        "parameterTypeId": "ININ.People.WorkgroupStats:Workgroup",
+                        "value": workgroup
+                    }, {
+                        "parameterTypeId": "ININ.Queue:Interval",
+                        "value": configuration.intervals[intervalIndex]
+                    }]
+                };
+
+                statWatchData.push(statWatchParams);
+            }
 
         }
     }
@@ -106,7 +119,9 @@ function startWorkgroupStatWatches(workgroupList){
         //Start polling for messages
         messageTimer = setInterval(pollMessages, 2000);
 
-        startAlertWatches();
+        setTimeout(function() {
+            startAlertWatches();
+        }, 3000);
     }); //end stat values put
 
 }
@@ -115,8 +130,15 @@ function startWorkgroupStatWatches(workgroupList){
 function logIntoCICAndStartWatches(){
     console.log("Logging into cic server at " + configuration.cicUrl + " with user " + configuration.cicUser);
     request(connection.loginRequestOptions(configuration.cicUrl, configuration.cicUser, configuration.cicPassword), function(error, response, body){
+        if(response == null)
+        {
+            console.log("No response from server")
+            setTimeout(function() {
+                logIntoCICAndStartWatches();
+            }, 3000);
 
-        console.log("log in to the server is complete: " + response.statusCode);
+        }
+        console.log("log in to the server is complete: " +  response.statusCode);
         if(response.statusCode == 201){
             connection.connectionComplete(configuration.cicUrl, response.headers);
 
@@ -152,5 +174,22 @@ app.listen(app.get('port'), function() {
 
 
 app.get('/workgroupstatistics', function(request, response){
-    response.send(stats.getWorkgroupStatCatalog());
+
+    var workgroupStats = stats.getWorkgroupStatCatalog();
+
+    if(request.query.workgroups == null || request.query.workgroups == 'null')
+    {
+        response.send(workgroupStats);
+        return;
+    }
+
+    var workgroupFilter = request.query.workgroups.toLowerCase().split(',')
+    var returnData = {};
+
+    for(var workgroupKey in workgroupStats){
+        if(workgroupFilter.indexOf(workgroupKey.toLowerCase()) > -1){
+            returnData[workgroupKey] = workgroupStats[workgroupKey];
+        }
+    }
+    response.send(returnData);
 })

@@ -148,6 +148,7 @@ function getAlertDefinition(definitionId)
 
                             function decStringToHex(decString){
                                 var hex = parseInt(decString).toString(16)
+
                                 if(hex.length == "1"){
                                     return "0" + hex;
                                 }
@@ -157,7 +158,8 @@ function getAlertDefinition(definitionId)
 
                             function parseRGBA(rgba){
                                 var arr = rgba.split(":");
-                                var hex = "#" + decStringToHex(arr[0]) + decStringToHex(arr[1]) + decStringToHex(arr[2])
+                                var hex = "#" + decStringToHex(arr[1]) + decStringToHex(arr[2]) + decStringToHex(arr[3])
+                                console.log("pars RGB " + rgba + " = " + hex)
                                 return hex;
                             }
 
@@ -273,6 +275,12 @@ function getAlertDefinition(definitionId)
         handleAlertNotification: function (alert){
 
             var definition = getAlertDefinition(alert.alertDefinitionId);
+
+            if(definition == null)
+            {
+                return
+            }
+
             var statId = definition.statisticKey.statisticIdentifier;
 
             var workgroup = getWorkgroupForStatistic(definition);
@@ -290,6 +298,9 @@ function getAlertDefinition(definitionId)
                 var alertLevel = getWorkgroupAlertLevel(workgroup, statId, null)
 
 
+                if(workgroupStatCatalog[workgroup] == null){
+                    return;
+                }
                 if(workgroupStatCatalog[workgroup][statId.split(':')[1]] == null){
                     workgroupStatCatalog[workgroup][statId.split(':')[1]] = {alert:getDefaultAlertSettings(), value:null};
                 }

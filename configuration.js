@@ -1,14 +1,18 @@
-var _cicUser = "kevin.glinski";
-var _cicPassword = "1234";
-var _cicUrl = 'http://morbo.dev2000.com:8018/icws'
-//_cicUrl = 'https://integrations.simdomain.com/icws'
+var _cicUser = process.env.CicUser;
+var _cicPassword = process.env.CicPassword;
+var _cicUrl = process.env.CicUrl;
 
-var _workgroupFilter = ['Marketing'];
+var envWorkgroupFilter = process.env.WorkgroupFilter || "Marketing,Support"
+var _workgroupFilter = envWorkgroupFilter.split(',')
+
+
+var _intervals = ["CurrentShift", "CurrentPeriod"];
 
 module.exports = {
     cicUser: _cicUser,
     cicPassword: _cicPassword,
     cicUrl:_cicUrl,
     workgroupFilter: _workgroupFilter,
+    intervals: _intervals,
 
 }
