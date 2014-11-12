@@ -4,7 +4,7 @@ This NodeJS application is a web service that will server statistics and alerts 
 
 URLs
 ----------
-**/workgroupstatistics?workgroups=marketing,support**
+**/workgroupstatistics?workgroups=marketing,support**  
 Request workgroup statistics.  The workgroups query string parameter is optional and can be used to filter what workgroup stats are returned.  Without the parameter set, it will return all workgroups that are configured on the server
 
 
@@ -13,17 +13,17 @@ Environment Parameters
 The following environment parameters must be configured in order to connect to the CIC server
 
 **CicUser** - User to connect to the server with.  This user should have rights to view workgroup statistics.  
-**CicPassword** - Password for the CicUser
-**CicUrl** - the url to reach the server e.g http://yourserver:8018/icws
+**CicPassword** - Password for the CicUser  
+**CicUrl** - the url to reach the server e.g http://yourserver:8018/icws  
 **WorkgroupFilter**  - comma separated workgroups to get stats for.
 
 Deploying to the Cloud
 ----------
-**Heroku**
-Use this button to deploy the application right to Heroku.  This does require that ICWS is exposed to the public internet with a reverse proxy.
+**Heroku**  
+Use this button to deploy the application right to Heroku.  This does require that ICWS is exposed to the public internet with a reverse proxy.  
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/InteractiveIntelligence/StatisticsWrapper)
 
-**Docker**
+**Docker**  
 Work to deploy to docker is under way, but not complete.  Feel free to contribute to help add Docker support.
 
 Example JSON
@@ -170,10 +170,10 @@ Other Notes
 ----------
 Unit Tests use Mocha
 
-Alert severity:
-none - 0
-normal - 1
-minor - 2
-major - 3
-warning - 4
-critical - 5
+Alert severity:  
+none - 0  
+normal - 1  
+minor - 2  
+major - 3  
+warning - 4  
+critical - 5  
