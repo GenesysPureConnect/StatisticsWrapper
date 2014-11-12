@@ -25,7 +25,6 @@ function pollMessages(){
         if(body == null){
             return;
         }
-
 //        console.log(JSON.stringify(body));
         //console.log(body);
         for(var i = 0; i< body.length; i++){
@@ -115,6 +114,10 @@ function startWorkgroupStatWatches(workgroupList){
     request(connection.getRequestOptions("PUT", "/messaging/subscriptions/statistics/statistic-values", {
         'statisticKeys': statWatchData
     }), function(error,response,body){
+
+        if(error){
+            console.log("Error starting stat watch:" + JSON.stringify(error))
+        }
 
         //Start polling for messages
         messageTimer = setInterval(pollMessages, 2000);

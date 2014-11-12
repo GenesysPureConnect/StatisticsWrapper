@@ -226,9 +226,10 @@ function getAlertDefinition(definitionId)
     function getStatisticValue (statistic){
 
         if(statistic.statisticValue == null){
+        //    console.log("Value is null")
             return null;
         }
-
+        //console.log("Value is " + statistic.statisticValue.value)
         return statistic.statisticValue.value;
     }
 
@@ -287,7 +288,7 @@ function getAlertDefinition(definitionId)
 
             if(this.workgroupStats.indexOf(statId) > -1){
 
-                console.log("workgroup stat alert " + statId + " for " + workgroup);
+            //    console.log("workgroup stat alert " + statId + " for " + workgroup);
                 if(!alert.cleared){
                     addWorkgroupAlertNotification(workgroup, statId, null, alert)
                 }
@@ -328,6 +329,9 @@ function getAlertDefinition(definitionId)
             var workgroup = getWorkgroupForStatistic(statistic);
             var statName = getStatisticName(statistic);
             var interval = getIntervalForStatistic(statistic);
+
+            //console.log("adding: " + workgroup + "-"+ statName + "-" + interval);
+            //console.log(JSON.stringify(statistic));
 
             if(workgroupStatCatalog[workgroup] == null){
                 workgroupStatCatalog[workgroup] = {};
