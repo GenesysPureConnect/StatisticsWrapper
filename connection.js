@@ -7,9 +7,9 @@ var server = null;
 module.exports = {
 
 
-    loginRequestOptions: function (server, username, password){
+    loginRequestOptions: function (server, cic, username, password){
         var options = {
-            url: server + '/connection',
+            url: server + "/" + cic + '/icws/connection',
             json: true,
             body: {
                 '__type':'urn:inin.com:connection:icAuthConnectionRequestSettings',
@@ -27,8 +27,9 @@ module.exports = {
         return options;
     },
 
-    connectionComplete: function(serverUrl, connectionInformation){
+    connectionComplete: function(serverUrl, cicServerName, connectionInformation){
         server = serverUrl;
+        cicServer = cicServerName;
         setCookie = connectionInformation['set-cookie'];
         sessionId = connectionInformation['inin-icws-session-id'];
         csrfToken = connectionInformation['inin-icws-csrf-token'];
@@ -37,7 +38,7 @@ module.exports = {
 
     getRequestOptions: function (method, url, data){
         var options = {
-            url: server + "/" + sessionId + url,
+            url: server + "/" + cicServer +"/icws/" + sessionId + url,
             json: true,
             body: data,
             method:method,

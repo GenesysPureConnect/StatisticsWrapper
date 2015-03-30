@@ -2,11 +2,25 @@ Statistics Wrapper
 ===========================
 This NodeJS application is a web service that will server statistics and alerts from CIC in a simple to consume JSON interface.  It connects to CIC through ICWS so you need the ICWS license for it to work.  
 
+Statistics
+----------
+The following statistics are currently polled
+
+**Workgroup**  
+TotalAgents, LoggedIn, NumberAvailableForACDInteractions, InteractionsWaiting
+
+**Workgroup Intervals**
+(Current Period, Current Shift)  
+InteractionsEntered, InteractionsAnswered, InteractionsCompleted, AverageTalkTime, AverageWaitTime
+
+
 URLs
 ----------
 **/workgroupstatistics?workgroups=marketing,support**
 Request workgroup statistics.  The workgroups query string parameter is optional and can be used to filter what workgroup stats are returned.  Without the parameter set, it will return all workgroups that are configured on the server
 
+**/workgroups**  
+List of workgroups that are watched.
 
 Environment Parameters
 ----------
@@ -14,8 +28,9 @@ The following environment parameters must be configured in order to connect to t
 
 **CicUser** - User to connect to the server with.  This user should have rights to view workgroup statistics.  
 **CicPassword** - Password for the CicUser
-**CicUrl** - the url to reach the server e.g http://yourserver:8018/icws
-**WorkgroupFilter**  - comma separated workgroups to get stats for.
+**CicUrl** - the url to reach the server e.g http://yourserver:8018/ or reverse proxy i.e. http://proxy/ where the path http://proxy/cicservername/icws will hit the icws endpoint on your cic server
+**CicServer** - the first cic server to try to connect to.  Leave blank if not using a reverse proxy.
+**WorkgroupFilter**  - comma separated workgroups to get stats for.  If this parameter is blank, all workgroups will be watched.
 
 Deploying to the Cloud
 ----------

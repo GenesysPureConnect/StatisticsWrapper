@@ -1,4 +1,5 @@
 var workgroupStatCatalog = {};
+var agentStatCatalog = {};
 var alertCatalog= {};
 var currentAlertList = {}
 
@@ -195,6 +196,18 @@ function getAlertDefinition(definitionId)
         return null;
     }
 
+    function getAgentForStatistic (statistic){
+        var paramValues = statistic.statisticKey.parameterValueItems;
+
+        for(var i = 0; i < paramValues.length; i++){
+            if(paramValues[i].parameterTypeId == "ININ.People.AgentStats:User"){
+                return paramValues[i].value;
+            }
+        }
+
+        return null;
+    }
+
     function getDefaultAlertSettings(){
         var alert = {};
         alert.severity = 0;
@@ -229,6 +242,26 @@ function getAlertDefinition(definitionId)
         //    console.log("Value is null")
             return null;
         }
+
+        if(statistic.statisticValue['__type']=='urn:inin.com:statistics:statisticErrorValue'){
+            var errorMessage = "";
+            switch(statistic.statisticValue.value){
+                case 1:
+                    errorMessage = "Malformed Statistic Key";
+                    break;
+                case 2:
+                    errorMessage = "Unknown Statistic Key";
+                    break;
+                case 3:
+                    errorMessage = "Statistic Provider Too Busy";
+                    break;
+                default:
+                    errorMessage = "Unknown, value: " + statistic.statisticValue.value;
+            }
+
+            throw errorMessage;
+        }
+
         //console.log("Value is " + statistic.statisticValue.value)
         return statistic.statisticValue.value;
     }
@@ -237,9 +270,15 @@ function getAlertDefinition(definitionId)
 
         workgroupStats : ['inin.workgroup:TotalAgents', 'inin.workgroup:LoggedIn', 'inin.workgroup:NumberAvailableForACDInteractions', 'inin.workgroup:InteractionsWaiting'],
         workgroupIntervalStats : ['inin.workgroup:InteractionsEntered', 'inin.workgroup:InteractionsAnswered', 'inin.workgroup:InteractionsCompleted', 'inin.workgroup:AverageTalkTime', 'inin.workgroup:AverageWaitTime'],
+        agentStats : ['inin.agent:AverageHoldTime', 'inin.agent:AverageTalkTime', 'inin.agent:InteractionsEntered', 'inin.agent:InteractionsAnswered', 'inin.agent:LongestTalkTime', 'inin.agent:NonACDInteractions'],
+
 
         isWorkgroupStatistic: function(statistic){
             return statistic.statisticKey.statisticIdentifier.indexOf('inin.workgroup') == 0;
+        },
+
+        isAgentStatistic: function(statistic){
+            return statistic.statisticKey.statisticIdentifier.indexOf('inin.agent') == 0;
         },
 
         alertCatalogUpdated: function (change){
@@ -326,10 +365,22 @@ function getAlertDefinition(definitionId)
         },
 
         addWorkgroupStatToCatalog : function(statistic){
-            var workgroup = getWorkgroupForStatistic(statistic);
-            var statName = getStatisticName(statistic);
-            var interval = getIntervalForStatistic(statistic);
-
+            var workgroup = "";
+            var statName = "";
+            var interval = "";
+            var value ="";
+            try
+            {
+                workgroup = getWorkgroupForStatistic(statistic);
+                statName = getStatisticName(statistic);
+                interval = getIntervalForStatistic(statistic);
+                value = getStatisticValue(statistic);
+            }
+            catch(e){
+                console.log("Error in addWorkgroupStatToCatalog: " + e);
+                console.log("error params: " + workgroup + "-"+ statName + "-" + interval);
+                return;
+            }
             //console.log("adding: " + workgroup + "-"+ statName + "-" + interval);
             //console.log(JSON.stringify(statistic));
 
@@ -355,6 +406,53 @@ function getAlertDefinition(definitionId)
 
                 workgroupStatCatalog[workgroup][statName].value = getStatisticValue(statistic);
             }
+        },
+
+        addAgentStatToCatalog : function(statistic){
+            var workgroup = "";
+            var statName = "";
+            var interval = "";
+            var agent = "";
+            var value = "";
+
+            try
+            {
+                workgroup = getWorkgroupForStatistic(statistic);
+                statName = getStatisticName(statistic);
+                interval = getIntervalForStatistic(statistic);
+                agent = getAgentForStatistic(statistic);
+                value = getStatisticValue(statistic);
+            }
+            catch(e){
+                console.log("Error in addAgentStatToCatalog: " + e);
+                console.log("stat params: " + agent + '-' + workgroup + "-"+ statName + "-" + interval);
+                return;
+            }
+
+        //    console.log("adding agent : " + agent + '-' + workgroup + "-"+ statName + "-" + interval + "-" + JSON.stringify(statistic));
+            //console.log(JSON.stringify(statistic));
+
+            if(agentStatCatalog[workgroup] == null){
+                agentStatCatalog[workgroup] = {};
+            }
+
+            if(agentStatCatalog[workgroup][agent] == null){
+                agentStatCatalog[workgroup][agent] = {};
+            }
+
+            if(agentStatCatalog[workgroup][agent][interval] == null){
+                agentStatCatalog[workgroup][agent][interval] = {};
+            }
+
+            if(agentStatCatalog[workgroup][agent][interval][statName] == null){
+                agentStatCatalog[workgroup][agent][interval][statName] = {alert:getDefaultAlertSettings(), value:null};
+            }
+
+            agentStatCatalog[workgroup][agent][interval][statName].value = getStatisticValue(statistic);
+        },
+
+        getAgentStatCatalog: function(){
+            return agentStatCatalog;
         },
 
         getWorkgroupStatCatalog: function(){

@@ -12,6 +12,7 @@ var connection = require('./connection');
 var configuration = require('./configuration');
 
 var messageTimer = null
+var watchedWorkgroupList = [];
 
 
 function pollMessages(){
@@ -40,6 +41,10 @@ function pollMessages(){
                     if(stats.isWorkgroupStatistic(stat))
                     {
                         stats.addWorkgroupStatToCatalog(stat);
+                    }
+                    else if(stats.isAgentStatistic(stat))
+                    {
+                        stats.addAgentStatToCatalog(stat);
                     }
                 }
             }else if (message['__type'] == 'urn:inin.com:alerts:alertNotificationMessage'){
@@ -70,6 +75,7 @@ function startAlertWatches(){
 }
 
 function startWorkgroupStatWatches(workgroupList){
+    watchedWorkgroupList = workgroupList;
     var statWatchData = [];
 
     for(var x=0; x< workgroupList.length; x++){
@@ -118,21 +124,51 @@ function startWorkgroupStatWatches(workgroupList){
         if(error){
             console.log("Error starting stat watch:" + JSON.stringify(error))
         }
-
-        //Start polling for messages
-        messageTimer = setInterval(pollMessages, 2000);
-
-        setTimeout(function() {
-            startAlertWatches();
-        }, 3000);
     }); //end stat values put
 
+}
+
+
+function performPostLoginOperations(server, headers){
+    connection.connectionComplete(configuration.cicUrl, server, headers);
+
+    if(configuration.workgroupFilter.length == 0)
+    {
+
+        request(connection.getRequestOptions("GET", "/configuration/workgroups", null), function(error,response,body){
+            //console.log(JSON.stringify(body));
+            var workgroups = [];
+            for(var x=0; x< body.items.length; x++){
+                var workgroup = body.items[x];
+                workgroups.push(workgroup.configurationId.id);
+            }
+
+            startWorkgroupStatWatches(workgroups);
+
+        });//end workgroup get
+    }
+    else
+    {
+        startWorkgroupStatWatches(configuration.workgroupFilter);
+    }
+
+    //Start polling for messages
+    messageTimer = setInterval(pollMessages, 2000);
+
+    setTimeout(function() {
+        //start agent watches in a little bit so we don't flood the system
+        startAgentStatWatches();
+    }, 3000);
+
+    setTimeout(function() {
+        startAlertWatches();
+    }, 3000);
 }
 
 //Log into CIC
 function logIntoCICAndStartWatches(){
     console.log("Logging into cic server at " + configuration.cicUrl + " with user " + configuration.cicUser);
-    request(connection.loginRequestOptions(configuration.cicUrl, configuration.cicUser, configuration.cicPassword), function(error, response, body){
+    request(connection.loginRequestOptions(configuration.cicUrl,configuration.cicServer, configuration.cicUser, configuration.cicPassword), function(error, response, body){
         if(response == null)
         {
             console.log("No response from server")
@@ -143,31 +179,98 @@ function logIntoCICAndStartWatches(){
         }
         console.log("log in to the server is complete: " +  response.statusCode);
         if(response.statusCode == 201){
-            connection.connectionComplete(configuration.cicUrl, response.headers);
+            performPostLoginOperations(configuration.cicUrl, response.headers);
+        }else if(response.statusCode ==503){
+            console.log(configuration.cicUrl + " is not accepting connections. Server list:")
+            console.log(response.body.alternateHostList)
 
-            if(configuration.workgroupFilter.length == 0)
-            {
 
-                request(connection.getRequestOptions("GET", "/configuration/workgroups", null), function(error,response,body){
-                    //console.log(JSON.stringify(body));
-                    var workgroups = [];
-                    for(var x=0; x< body.items.length; x++){
-                        var workgroup = body.items[x];
-                        workgroups.push(workgroup.configurationId.id);
-                    }
+            logIntoAlternateServer(response.body.alternateHostList)
+            return;
 
-                    startWorkgroupStatWatches(workgroups);
-
-                });//end workgroup get
-            }
-            else
-            {
-                startWorkgroupStatWatches(configuration.workgroupFilter);
-            }
-        }//end if logged in
+        }
     });//end log in request
 }
 
+function logIntoAlternateServer(serverList){
+
+    var nextServer = serverList.shift();
+
+    console.log("Logging into alternate cic server at " + nextServer + " with user " + configuration.cicUser);
+    request(connection.loginRequestOptions(configuration.cicUrl,nextServer, configuration.cicUser, configuration.cicPassword), function(error, response, body){
+        if(response == null)
+        {
+            logIntoAlternateServer(serverList)
+            return;
+        }
+        console.log("log in to the server is complete: " +  response.statusCode);
+        if(response.statusCode == 201){
+            performPostLoginOperations(nextServer, response.headers);
+        }else if(response.statusCode ==503){
+            console.log(serverList + " is not accepting connections")
+
+            logIntoAlternateServer(serverList)
+            return;
+
+        }
+    });//end log in request
+}
+
+function startAgentStatWatches(){
+    //watchedWorkgroupList = workgroupList;
+    var agentStatWatchData = [];
+
+    for(var wgIndex=0; wgIndex < watchedWorkgroupList.length; wgIndex++)
+    {
+        var workgroup = watchedWorkgroupList[wgIndex];
+        request(connection.getRequestOptions("GET", "/configuration/workgroups/" + watchedWorkgroupList[wgIndex] + "?rightsFilter=view&select=members", null), function(error,response,body){
+
+            var agents = [];
+            var statWatchData = [];
+
+            for(var x=0; x< body.members.length; x++){
+
+                var agent = body.members[x].id;
+
+            //    console.log("starting agent watch:" + agent + ", " + workgroup)
+            //    console.log(JSON.stringify(body));
+                for(var statKeyIndex = 0; statKeyIndex< stats.agentStats.length; statKeyIndex++){
+
+                    var statWatchParams = {
+                        "statisticIdentifier": stats.agentStats[statKeyIndex],
+                        "parameterValueItems": [{
+                            "parameterTypeId": "ININ.People.WorkgroupStats:Workgroup",
+                            "value": body.configurationId.id
+                        }, {
+                            "parameterTypeId": "ININ.Queue:Interval",
+                            "value": "CurrentShift"
+                        }, {
+                            "parameterTypeId": "ININ.People.AgentStats:User",
+                            "value": agent
+                        }]
+                    };
+
+                    agentStatWatchData.push(statWatchParams);
+
+                }
+
+            }
+
+            request(connection.getRequestOptions("PUT", "/messaging/subscriptions/statistics/statistic-values", {
+                'statisticKeys': agentStatWatchData
+            }), function(error,response,body){
+
+                if(error){
+                    console.log("Error starting agent stat watch:" + JSON.stringify(error))
+                }
+                else{
+                //    console.log("agent response:" + JSON.stringify(response))
+                }
+            }); //end stat values put
+        });
+    }
+
+}
 
 logIntoCICAndStartWatches();
 
@@ -175,6 +278,9 @@ app.listen(app.get('port'), function() {
     console.log("Node app is running at localhost:" + app.get('port'))
 })
 
+app.get('/workgroups', function(request, response){
+    response.send(watchedWorkgroupList);
+})
 
 app.get('/workgroupstatistics', function(request, response){
 
@@ -192,6 +298,27 @@ app.get('/workgroupstatistics', function(request, response){
     for(var workgroupKey in workgroupStats){
         if(workgroupFilter.indexOf(workgroupKey.toLowerCase()) > -1){
             returnData[workgroupKey] = workgroupStats[workgroupKey];
+        }
+    }
+    response.send(returnData);
+})
+
+app.get('/agentstatistics', function(request, response){
+
+    var agentStats = stats.getAgentStatCatalog();
+
+    if(request.query.workgroups == null || request.query.workgroups == 'null')
+    {
+        response.send(agentStats);
+        return;
+    }
+
+    var workgroupFilter = request.query.workgroups.toLowerCase().split(',')
+    var returnData = {};
+
+    for(var workgroupKey in workgroupStats){
+        if(workgroupFilter.indexOf(workgroupKey.toLowerCase()) > -1){
+            returnData[workgroupKey] = agentStats[workgroupKey];
         }
     }
     response.send(returnData);
