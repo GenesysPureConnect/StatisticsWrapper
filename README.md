@@ -16,7 +16,7 @@ InteractionsEntered, InteractionsAnswered, InteractionsCompleted, AverageTalkTim
 
 URLs
 ----------
-**/workgroupstatistics?workgroups=marketing,support**
+**/workgroupstatistics?workgroups=marketing,support**  
 Request workgroup statistics.  The workgroups query string parameter is optional and can be used to filter what workgroup stats are returned.  Without the parameter set, it will return all workgroups that are configured on the server
 
 **/workgroups**  
@@ -34,11 +34,11 @@ The following environment parameters must be configured in order to connect to t
 
 Deploying to the Cloud
 ----------
-**Heroku**
-Use this button to deploy the application right to Heroku.  This does require that ICWS is exposed to the public internet with a reverse proxy.
+**Heroku**  
+Use this button to deploy the application right to Heroku.  This does require that ICWS is exposed to the public internet with a reverse proxy.  
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/InteractiveIntelligence/StatisticsWrapper)
 
-**Docker**
+**Docker**  
 Work to deploy to docker is under way, but not complete.  Feel free to contribute to help add Docker support.
 
 Example JSON
@@ -185,10 +185,10 @@ Other Notes
 ----------
 Unit Tests use Mocha
 
-Alert severity:
-none - 0
-normal - 1
-minor - 2
-major - 3
-warning - 4
-critical - 5
+Alert severity:  
+none - 0  
+normal - 1  
+minor - 2  
+major - 3  
+warning - 4  
+critical - 5  
