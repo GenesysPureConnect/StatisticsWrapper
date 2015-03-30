@@ -431,28 +431,36 @@ function getAlertDefinition(definitionId)
 
         //    console.log("adding agent : " + agent + '-' + workgroup + "-"+ statName + "-" + interval + "-" + JSON.stringify(statistic));
             //console.log(JSON.stringify(statistic));
+            try
+            {
+                if(agentStatCatalog == null){
+                    return;
+                }
 
-            if(agentStatCatalog == null){
-                return;
+                if(agentStatCatalog[workgroup] == null){
+                    agentStatCatalog[workgroup] = {};
+                }
+
+                if(agentStatCatalog[workgroup][agent] == null){
+                    agentStatCatalog[workgroup][agent] = {};
+                }
+
+                if(agentStatCatalog[workgroup][agent][interval] == null){
+                    agentStatCatalog[workgroup][agent][interval] = {};
+                }
+
+                if(agentStatCatalog[workgroup][agent][interval][statName] == null){
+                    agentStatCatalog[workgroup][agent][interval][statName] = {alert:getDefaultAlertSettings(), value:null};
+                }
+
+                agentStatCatalog[workgroup][agent][interval][statName].value = getStatisticValue(statistic);
+            }
+            catch(e){
+
+                console.log("Error in addAgentStatToCatalog: " + e);
             }
 
-            if(agentStatCatalog[workgroup] == null){
-                agentStatCatalog[workgroup] = {};
-            }
 
-            if(agentStatCatalog[workgroup][agent] == null){
-                agentStatCatalog[workgroup][agent] = {};
-            }
-
-            if(agentStatCatalog[workgroup][agent][interval] == null){
-                agentStatCatalog[workgroup][agent][interval] = {};
-            }
-
-            if(agentStatCatalog[workgroup][agent][interval][statName] == null){
-                agentStatCatalog[workgroup][agent][interval][statName] = {alert:getDefaultAlertSettings(), value:null};
-            }
-
-            agentStatCatalog[workgroup][agent][interval][statName].value = getStatisticValue(statistic);
         },
 
         getAgentStatCatalog: function(){
