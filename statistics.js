@@ -1,5 +1,4 @@
 var workgroupStatCatalog = {};
-var agentStatCatalog = {};
 var alertCatalog= {};
 var currentAlertList = {}
 
@@ -327,7 +326,6 @@ function getAlertDefinition(definitionId)
 
             if(this.workgroupStats.indexOf(statId) > -1){
 
-            //    console.log("workgroup stat alert " + statId + " for " + workgroup);
                 if(!alert.cleared){
                     addWorkgroupAlertNotification(workgroup, statId, null, alert)
                 }
@@ -365,6 +363,7 @@ function getAlertDefinition(definitionId)
         },
 
         addWorkgroupStatToCatalog : function(statistic){
+
             var workgroup = "";
             var statName = "";
             var interval = "";
@@ -383,6 +382,7 @@ function getAlertDefinition(definitionId)
             }
             //console.log("adding: " + workgroup + "-"+ statName + "-" + interval);
             //console.log(JSON.stringify(statistic));
+
 
             if(workgroupStatCatalog[workgroup] == null){
                 workgroupStatCatalog[workgroup] = {};

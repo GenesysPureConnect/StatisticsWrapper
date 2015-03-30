@@ -27,6 +27,7 @@ module.exports = {
         return options;
     },
 
+
     connectionComplete: function(serverUrl, cicServerName, connectionInformation){
         server = serverUrl;
         cicServer = cicServerName;

@@ -14,7 +14,6 @@ var configuration = require('./configuration');
 var messageTimer = null
 var watchedWorkgroupList = [];
 
-
 function pollMessages(){
     request(connection.getRequestOptions("GET",'/messaging/messages',null), function(error, response, body){
 
@@ -75,6 +74,7 @@ function startAlertWatches(){
 }
 
 function startWorkgroupStatWatches(workgroupList){
+
     watchedWorkgroupList = workgroupList;
     var statWatchData = [];
 
@@ -121,6 +121,7 @@ function startWorkgroupStatWatches(workgroupList){
         'statisticKeys': statWatchData
     }), function(error,response,body){
 
+
         if(error){
             console.log("Error starting stat watch:" + JSON.stringify(error))
         }
@@ -163,6 +164,7 @@ function performPostLoginOperations(server, headers){
     setTimeout(function() {
         startAlertWatches();
     }, 3000);
+
 }
 
 //Log into CIC
@@ -179,6 +181,7 @@ function logIntoCICAndStartWatches(){
         }
         console.log("log in to the server is complete: " +  response.statusCode);
         if(response.statusCode == 201){
+
             performPostLoginOperations(configuration.cicUrl, response.headers);
         }else if(response.statusCode ==503){
             console.log(configuration.cicUrl + " is not accepting connections. Server list:")
@@ -271,6 +274,7 @@ function startAgentStatWatches(){
     }
 
 }
+
 
 logIntoCICAndStartWatches();
 
