@@ -432,6 +432,10 @@ function getAlertDefinition(definitionId)
         //    console.log("adding agent : " + agent + '-' + workgroup + "-"+ statName + "-" + interval + "-" + JSON.stringify(statistic));
             //console.log(JSON.stringify(statistic));
 
+            if(agentStatCatalog == null){
+                return;
+            }
+
             if(agentStatCatalog[workgroup] == null){
                 agentStatCatalog[workgroup] = {};
             }
