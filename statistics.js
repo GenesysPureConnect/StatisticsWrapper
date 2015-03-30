@@ -1,4 +1,5 @@
 var workgroupStatCatalog = {};
+var agentStatCatalog = {};
 var alertCatalog= {};
 var currentAlertList = {}
 
