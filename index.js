@@ -130,8 +130,8 @@ function startWorkgroupStatWatches(workgroupList){
 }
 
 
-function performPostLoginOperations(server, headers){
-    connection.connectionComplete(configuration.cicUrl, server, headers);
+function performPostLoginOperations(fullServerUrl, headers){
+    connection.connectionComplete(fullServerUrl, headers);
 
     if(configuration.workgroupFilter.length == 0)
     {
@@ -170,7 +170,10 @@ function performPostLoginOperations(server, headers){
 //Log into CIC
 function logIntoCICAndStartWatches(){
     console.log("Logging into cic server at " + configuration.cicUrl + " with user " + configuration.cicUser);
-    request(connection.loginRequestOptions(configuration.cicUrl,configuration.cicServer, configuration.cicUser, configuration.cicPassword), function(error, response, body){
+
+    var loginOptions = connection.loginRequestOptions(configuration.cicUrl,configuration.cicServer, configuration.cicUser, configuration.cicPassword);
+
+    request(loginOptions, function(error, response, body){
         if(response == null)
         {
             console.log("No response from server")
@@ -180,9 +183,10 @@ function logIntoCICAndStartWatches(){
 
         }
         console.log("log in to the server is complete: " +  response.statusCode);
+
         if(response.statusCode == 201){
 
-            performPostLoginOperations(configuration.cicUrl, response.headers);
+            performPostLoginOperations(loginOptions.url, response.headers);
         }else if(response.statusCode ==503){
             console.log(configuration.cicUrl + " is not accepting connections. Server list:")
             console.log(response.body.alternateHostList)
@@ -200,7 +204,9 @@ function logIntoAlternateServer(serverList){
     var nextServer = serverList.shift();
 
     console.log("Logging into alternate cic server at " + nextServer + " with user " + configuration.cicUser);
-    request(connection.loginRequestOptions(configuration.cicUrl,nextServer, configuration.cicUser, configuration.cicPassword), function(error, response, body){
+    var loginOptions = connection.loginRequestOptions(configuration.cicUrl,nextServer, configuration.cicUser, configuration.cicPassword);
+
+    request(loginOptions, function(error, response, body){
         if(response == null)
         {
             logIntoAlternateServer(serverList)
@@ -208,7 +214,7 @@ function logIntoAlternateServer(serverList){
         }
         console.log("log in to the server is complete: " +  response.statusCode);
         if(response.statusCode == 201){
-            performPostLoginOperations(nextServer, response.headers);
+            performPostLoginOperations(loginOptions.url, response.headers);
         }else if(response.statusCode ==503){
             console.log(serverList + " is not accepting connections")
 

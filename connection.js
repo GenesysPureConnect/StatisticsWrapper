@@ -2,14 +2,24 @@
 var csrfToken = null;
 var setCookie = null;
 var sessionId = null;
-var server = null;
+var fullServerUrl = null;
 
 module.exports = {
 
 
     loginRequestOptions: function (server, cic, username, password){
+        console.log('login request options\nserver: ' + server + "\ncic: " + cic)
+
+        var url = '';
+
+        if(cic == null || cic == ''){
+            url = server + '/icws/connection';
+        }else{
+            url = server + "/" + cic + '/icws/connection';
+        }
+
         var options = {
-            url: server + "/" + cic + '/icws/connection',
+            url: url,
             json: true,
             body: {
                 '__type':'urn:inin.com:connection:icAuthConnectionRequestSettings',
@@ -28,9 +38,8 @@ module.exports = {
     },
 
 
-    connectionComplete: function(serverUrl, cicServerName, connectionInformation){
-        server = serverUrl;
-        cicServer = cicServerName;
+    connectionComplete: function(connectedServerUrl, connectionInformation){
+        fullServerUrl = connectedServerUrl.replace("/icws/connection", "");
         setCookie = connectionInformation['set-cookie'];
         sessionId = connectionInformation['inin-icws-session-id'];
         csrfToken = connectionInformation['inin-icws-csrf-token'];
@@ -39,7 +48,7 @@ module.exports = {
 
     getRequestOptions: function (method, url, data){
         var options = {
-            url: server + "/" + cicServer +"/icws/" + sessionId + url,
+            url: fullServerUrl +"/icws/" + sessionId + url,
             json: true,
             body: data,
             method:method,
