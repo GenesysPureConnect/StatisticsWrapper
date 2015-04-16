@@ -237,6 +237,12 @@ function startAgentStatWatches(){
             var agents = [];
             var statWatchData = [];
 
+            if(body.members == null){
+                console.log("Error getting workgroup members")
+                console.log(body)
+                return;
+            }
+
             for(var x=0; x< body.members.length; x++){
 
                 var agent = body.members[x].id;

@@ -16,7 +16,9 @@ module.exports = {
             url = server + '/icws/connection';
         }else{
             url = server + "/" + cic + '/icws/connection';
+
         }
+        console.log(url)
 
         var options = {
             url: url,
